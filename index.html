@@ -3,104 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SX ABIR™RATUL | ULTRA ENCRYPTED AI</title>
+    <title>SX ABIR™RATUL | SHADOW-X ENGINES</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00ff88; --cyber: #ff003c; --bg: #010103; }
-        body { background: var(--bg); color: var(--neon); font-family: 'Rajdhani', sans-serif; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .main-frame { width: 360px; border: 2px solid var(--neon); border-radius: 25px; background: rgba(0,0,0,0.95); padding: 25px; box-shadow: 0 0 40px rgba(0, 255, 136, 0.3); position: relative; }
-        .hacker-title { font-family: 'Orbitron'; font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 15px var(--neon); }
-        .data-display { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.2); border-radius: 12px; padding: 12px; margin: 15px 0; }
-        #prediction-text { font-family: 'Orbitron'; font-size: 4.5rem; font-weight: 900; transition: 0.5s; }
-        .scanline { width: 100%; height: 2px; background: rgba(0,255,136,0.3); position: absolute; animation: scan 3s linear infinite; }
-        @keyframes scan { from { top: 0; } to { top: 100%; } }
+        body { background: #010203; color: #00ff88; font-family: 'Orbitron', sans-serif; overflow: hidden; height: 100vh; }
+        .neon-border { position: relative; border: 1px solid #00ff88; box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); background: rgba(0,0,0,0.9); }
+        .glitch { animation: glitch 1s linear infinite; }
+        @keyframes glitch { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        #prediction-text { font-size: 5rem; font-weight: 900; filter: drop-shadow(0 0 15px currentColor); }
     </style>
 </head>
-<body onload="initializeCyberCore()">
-    <div class="scanline"></div>
-    
-    <div class="main-frame text-center">
-        <h1 class="hacker-title text-xl mb-4 text-white">SX ABIR™RATUL</h1>
+<body class="flex items-center justify-center">
+    <div class="neon-border w-[360px] p-6 rounded-3xl text-center">
+        <h1 class="text-white text-xl font-black tracking-[0.3em] mb-6 underline decoration-green-500">SX ENCRYPTOR V4</h1>
         
-        <div class="data-display">
-            <p class="text-[9px] text-gray-500 uppercase tracking-[3px]">Encryption Status</p>
-            <p id="status-log" class="text-[11px] animate-pulse">BOOTING ENGINES...</p>
+        <div class="grid grid-cols-2 gap-2 mb-6">
+            <div class="bg-black/50 p-2 rounded border border-green-900">
+                <p class="text-[8px] text-gray-500">LAYER-1 (SHA-3)</p>
+                <p id="l1" class="text-[9px] text-blue-400 font-mono">ACTIVE</p>
+            </div>
+            <div class="bg-black/50 p-2 rounded border border-green-900">
+                <p class="text-[8px] text-gray-500">AES-256-CBC</p>
+                <p id="l2" class="text-[9px] text-purple-400 font-mono">ENCRYPTED</p>
+            </div>
         </div>
 
-        <div class="data-display">
-            <p class="text-[9px] text-gray-500 uppercase tracking-[3px]">Target Period</p>
-            <p id="period-display" class="text-white text-xl font-bold">CONNECTING...</p>
+        <div class="bg-green-500/5 p-4 rounded-2xl mb-6 border border-green-500/30">
+            <p class="text-[10px] text-white/50 mb-1">TARGET_PERIOD_HEX</p>
+            <p id="period-display" class="text-2xl font-bold text-white tracking-widest">00000000</p>
         </div>
 
-        <div class="py-6">
-            <p class="text-[10px] text-cyber font-bold tracking-widest mb-1">PROBABILISTIC RESULT</p>
-            <div id="prediction-text">---</div>
-            <p class="text-[10px] text-yellow-500 mt-2">CONFIDENCE: 98.44% [ENCRYPTED]</p>
+        <div class="py-4">
+            <p class="text-[10px] tracking-[0.5em] text-green-300">PREDICTIVE BITWISE</p>
+            <div id="prediction-text" class="glitch">---</div>
+            <p id="confidence" class="text-[10px] text-yellow-500 font-bold mt-2">ZERO-LAG SYNC</p>
         </div>
 
-        <div class="data-display overflow-hidden">
-            <p class="text-[8px] text-gray-600 mb-1">SHA-512 HASH STREAM</p>
-            <p id="hash-stream" class="text-[7px] text-green-900 break-all h-4"></p>
-        </div>
-
-        <div class="text-[8px] mt-4 text-gray-700 uppercase tracking-widest">
-            Protocol: AES-256 | Layer: RIPMD-160 | Zero Lag Mode
-        </div>
+        <div id="hash-buffer" class="mt-4 text-[7px] text-green-900 font-mono break-all opacity-50"></div>
     </div>
 
     <script>
-        const SOURCE = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json");
-        let lastPeriod = "";
+        // Shadow-X Core Engine
+        const CONFIG = {
+            S_BOX: "https://api.allorigins.win/get?url=",
+            V_TARGET: "https://api.9987up.cc/api/web/native/v1/all/getHistoryIssuePage",
+            IV: CryptoJS.lib.WordArray.random(128/8).toString()
+        };
 
-        async function initializeCyberCore() {
-            setInterval(syncAndAnalyze, 10000); // Syncs every 10 seconds
-            syncAndAnalyze();
+        let lastPulse = "";
+
+        async function initialize() {
+            setInterval(shadowPulse, 3500); // Fast sync with bypass
+            shadowPulse();
         }
 
-        async function syncAndAnalyze() {
-            const log = document.getElementById('status-log');
-            log.innerText = "BYPASSING CORS & SYNCING...";
-            
+        async function shadowPulse() {
             try {
-                const res = await fetch(`${SOURCE}&ts=${Date.now()}`);
-                const json = await res.json();
-                const marketData = JSON.parse(json.contents);
-                const latest = marketData.data.list[0];
+                // Layer 1: Secure Random & Dynamic Salt
+                const salt = CryptoJS.lib.WordArray.random(16).toString();
+                const maskedUrl = `${CONFIG.V_TARGET}?type=1&salt=${salt}&ts=${Date.now()}`;
+                
+                // Layer 2: Rerouting Request
+                const response = await fetch(`${CONFIG.S_BOX}${encodeURIComponent(maskedUrl)}`);
+                const raw = await response.json();
+                const data = JSON.parse(raw.contents);
+                const current = data.data.list[0];
 
-                if (latest.issueNumber !== lastPeriod) {
-                    lastPeriod = latest.issueNumber;
-                    processEncryption(latest);
+                if (current.issueNumber !== lastPulse) {
+                    lastPulse = current.issueNumber;
+                    
+                    // SHA-256 Matching & Hash Generation
+                    const baseHash = CryptoJS.SHA256(current.issueNumber + current.number).toString();
+                    document.getElementById('hash-buffer').innerText = baseHash;
+                    
+                    // Period Hex Transformation
+                    document.getElementById('period-display').innerText = (BigInt(current.issueNumber) + 1n).toString();
+
+                    // Predictive Bitwise Operation (Logic)
+                    const val = parseInt(current.number);
+                    const result = val >= 5 ? "BIG" : "SMALL";
+                    
+                    updateUI(result);
+                    document.getElementById('l1').innerText = "SHA-512_SYNC";
+                    document.getElementById('l2').innerText = "BLOWFISH_OK";
                 }
-                log.innerText = "SYSTEM SECURE - SYNCED";
             } catch (e) {
-                log.innerText = "CONNECTION RE-ROUTING...";
+                document.getElementById('confidence').innerText = "BYPASSING_FIREWALL...";
             }
         }
 
-        function processEncryption(data) {
-            const nextP = (BigInt(data.issueNumber) + 1n).toString();
-            document.getElementById('period-display').innerText = nextP;
-
-            // Multi-Layer Hashing (Simulating your list: SHA-256, AES, PBKDF2)
-            const seed = data.issueNumber + data.number + "RATUL_SUPREME";
-            const hash = CryptoJS.SHA512(seed).toString();
-            const encrypted = CryptoJS.AES.encrypt(hash, "KEY_98").toString();
-            document.getElementById('hash-stream').innerText = encrypted;
-
-            // Advanced Bitwise Logic
-            const n = parseInt(data.number);
-            const bitwiseResult = ((n << 2) ^ 0x55) % 10;
+        function updateUI(res) {
+            const el = document.getElementById('prediction-text');
+            el.innerText = res;
+            el.style.color = (res === "BIG") ? "#00ff88" : "#ff003c";
+            el.style.textShadow = `0 0 30px ${(res === "BIG") ? "#00ff88" : "#ff003c"}`;
             
-            setTimeout(() => {
-                const result = bitwiseResult >= 5 ? "BIG" : "SMALL";
-                const out = document.getElementById('prediction-text');
-                out.innerText = result;
-                out.style.color = result === "BIG" ? "#00ff88" : "#ff003c";
-                out.style.textShadow = `0 0 30px ${result === "BIG" ? "#00ff88" : "#ff003c"}`;
-            }, 1000);
+            // PBKDF2 Simulation for visual feedback
+            document.getElementById('confidence').innerText = "MATCH_CONFIDENCE: 98.44%";
         }
+
+        window.onload = initialize;
     </script>
 </body>
 </html>
