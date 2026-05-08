@@ -3,180 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SX ABIR™RATUL • RGB ULTIMATE</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <title>SB DELTA • RGB ULTIMATE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --rgb-speed: 3s; }
-        * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+        :root { --neon: #00ff88; --cyber: #00f3ff; --bg: #020205; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         
+        /* FULL SCREEN RGB ANIMATION */
         body { 
-            background: #000; 
-            height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-family: 'Orbitron', sans-serif;
-            overflow: hidden;
+            margin: 0; background-color: var(--bg); color: #fff; height: 100vh; overflow: hidden; 
+            font-family: 'Rajdhani', sans-serif; display: flex; align-items: center; justify-content: center;
             position: relative;
         }
 
-        /* Full Screen RGB Border Glow */
         body::before {
             content: ""; position: absolute; inset: 0;
-            border: 4px solid;
+            border: 6px solid;
             border-image: linear-gradient(var(--angle), #ff0000, #00ff88, #00f3ff, #ff00ff, #ff0000) 1;
-            animation: rotate-angle var(--rgb-speed) linear infinite;
+            animation: rotate-angle 3s linear infinite;
             z-index: 10; pointer-events: none;
         }
 
         @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
         @keyframes rotate-angle { to { --angle: 360deg; } }
 
-        /* Premium RGB Panel */
-        .premium-card {
-            width: 90%; max-width: 400px;
-            background: rgba(0, 0, 0, 0.9);
-            border-radius: 30px;
-            padding: 40px 20px;
-            text-align: center;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            box-shadow: 0 0 50px rgba(0, 255, 136, 0.2);
-            position: relative; z-index: 5;
+        /* RGB Background Matrix */
+        body::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px; z-index: 0; pointer-events: none;
         }
 
-        .rgb-text {
-            background: linear-gradient(to right, #ff0000, #00ff88, #00f3ff, #ff0000);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 3s linear infinite;
+        .ui-panel { 
+            width: 320px; z-index: 9000; 
+            background: rgba(2, 5, 10, 0.98); border-radius: 25px; 
+            border: 2px solid var(--neon); box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
+            backdrop-filter: blur(25px); padding: 0; overflow: hidden;
+            animation: borderGlow 4s infinite alternate;
         }
 
-        @keyframes shine { to { background-position: 200% center; } }
+        @keyframes borderGlow {
+            0% { border-color: var(--neon); box-shadow: 0 0 20px var(--neon); }
+            100% { border-color: var(--cyber); box-shadow: 0 0 20px var(--cyber); }
+        }
 
-        .period-box { font-size: 1.5rem; color: #fff; letter-spacing: 5px; margin-bottom: 20px; }
-        .prediction-val { font-size: 6rem; font-weight: 900; line-height: 1; margin: 20px 0; }
+        .panel-header { 
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.3), transparent); 
+            padding: 18px; border-bottom: 1px solid rgba(0, 255, 136, 0.5);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .glitch-text { 
+            font-family: 'Orbitron'; font-size: 50px; font-weight: 900; 
+            text-shadow: 0 0 25px var(--neon); color: #fff;
+        }
+
+        .step-display {
+            background: #ff003c; color: white; padding: 4px 15px;
+            border-radius: 50px; font-size: 12px; font-weight: bold;
+            box-shadow: 0 0 15px #ff003c; display: none; margin-bottom: 10px;
+        }
+
+        #resOverlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); z-index: 10000; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;}
+        #resOverlay.show { transform: translate(-50%, -50%) scale(1); }
         
-        /* Level/Step Display */
-        .step-badge {
-            display: inline-block;
-            padding: 5px 20px;
-            border-radius: 50px;
-            background: #ff003c;
-            color: #fff;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px #ff003c;
-        }
-
-        #status { font-size: 10px; margin-top: 20px; color: #00ff88; opacity: 0.7; }
+        .timer-box { font-family: 'Orbitron'; color: var(--cyber); text-shadow: 0 0 15px var(--cyber); font-size: 45px; }
     </style>
 </head>
-<body onload="ignite()">
+<body onload="startEngine()">
 
-    <div class="premium-card">
-        <h1 class="rgb-text text-2xl font-black mb-8 tracking-widest">SX ABIR™RATUL VIP</h1>
+    <div class="ui-panel">
+        <div class="panel-header">
+            <span class="text-[14px] font-bold text-white font-['Orbitron'] tracking-tighter">⚡ SB DELTA EDITION ⚡</span>
+            <i class="fa-solid fa-bolt-lightning text-neon animate-bounce"></i>
+        </div>
         
-        <div class="period-box">
-            <p class="text-[10px] text-gray-500 uppercase tracking-[0.3em]">Next Period</p>
-            <span id="period" class="font-bold">--------</span>
+        <div class="p-8 text-center">
+            <div id="step-tag" class="step-display">STEP 1</div>
+            <div class="text-[12px] text-gray-400 mb-2 tracking-[4px] uppercase">Period: <span id="period" class="text-neon">---</span></div>
+            <div class="timer-box mb-6 font-black" id="timer">00:00</div>
+            
+            <div class="bg-black/80 border-2 border-green-500/20 rounded-3xl p-8 relative">
+                <div class="text-[11px] text-cyber/80 mb-3 tracking-[6px] uppercase font-bold">Signal Result</div>
+                <div id="p-res" class="glitch-text">WAIT</div>
+                <div class="text-[9px] text-neon mt-4 tracking-[3px] font-bold animate-pulse uppercase">Secure Delta Link</div>
+            </div>
         </div>
-
-        <div id="step-container" class="mb-4" style="display:none;">
-            <div id="step-id" class="step-badge">STEP 1</div>
-        </div>
-
-        <div class="py-4">
-            <p class="text-[10px] text-cyan-400 font-bold tracking-[0.5em] uppercase">Signal Analysis</p>
-            <div id="prediction" class="prediction-val rgb-text">WAIT</div>
-        </div>
-
-        <div id="status" class="animate-pulse">SYSTEM ENCRYPTED & SYNCED</div>
     </div>
 
-<script>
-    const PROXY = "https://api.allorigins.win/get?url=";
-    const TARGET = "https://api.9987up.cc/api/web/native/v1/all/getHistoryIssuePage";
-    
-    let lastPeriod = "";
-    let currentStep = 1;
-    let pendingPrediction = null;
+    <div id="resOverlay"><div id="resMsg"></div></div>
 
-    function ignite() {
-        setInterval(syncData, 3000);
+<script>
+    const API = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
+    let lastPeriod = "", currentPrediction = null;
+    let currentStep = 1; // Step System Logic
+    
+    function startEngine() {
+        setInterval(() => {
+            const d = new Date(); const s = d.getSeconds();
+            let rem = 60 - s;
+            document.getElementById('timer').innerText = `00:${rem < 10 ? '0'+rem : rem}`;
+            if(rem === 59 || rem === 1) syncData();
+        }, 1000);
         syncData();
     }
 
     async function syncData() {
         try {
-            const api = `${TARGET}?type=1&_=${Date.now()}`;
-            const response = await fetch(`${PROXY}${encodeURIComponent(api)}`);
-            const json = await response.json();
-            const market = JSON.parse(json.contents);
-            const latest = market.data.list[0];
-
-            // 1. Result Check (Win/Loss Logic)
-            if (pendingPrediction && latest.issueNumber === pendingPrediction.target) {
+            const res = await fetch(`${API}?ts=${Date.now()}`);
+            const data = await res.json();
+            const latest = data.data.list[0];
+            
+            // Checking Prediction for Step Logic
+            if(currentPrediction && latest.issueNumber === currentPrediction.period) {
                 const actual = parseInt(latest.number) >= 5 ? "BIG" : "SMALL";
+                const isWin = currentPrediction.type === actual;
                 
-                if (pendingPrediction.type === actual) {
-                    // WIN
-                    triggerWin();
-                    currentStep = 1; // Reset step on win
-                    document.getElementById('step-container').style.display = "none";
+                if(isWin) {
+                    currentStep = 1; // Reset to Step 1 on Win
+                    document.getElementById('step-tag').style.display = "none";
                 } else {
-                    // LOSS
-                    currentStep++; // Increase step on loss
-                    document.getElementById('step-id').innerText = `STEP ${currentStep}`;
-                    document.getElementById('step-container').style.display = "block";
+                    currentStep++; // Increase Step on Loss
+                    document.getElementById('step-tag').innerText = `STEP ${currentStep}`;
+                    document.getElementById('step-tag').style.display = "inline-block";
                 }
-                pendingPrediction = null;
-            }
 
-            // 2. New Prediction Logic
-            if (latest.issueNumber !== lastPeriod) {
+                showResultAnim(isWin);
+                currentPrediction = null;
+            }
+            
+            if(latest.issueNumber !== lastPeriod) {
                 lastPeriod = latest.issueNumber;
                 const nextP = (BigInt(latest.issueNumber) + 1n).toString();
                 document.getElementById('period').innerText = nextP;
-
-                // Secure SHA-256 Bitwise Logic
-                const hash = CryptoJS.SHA256(latest.issueNumber + salt(8)).toString();
-                const type = parseInt(hash.charAt(5), 16) % 2 === 0 ? "BIG" : "SMALL";
                 
-                const el = document.getElementById('prediction');
-                el.innerText = type;
-                el.style.backgroundImage = type === 'BIG' 
-                    ? "linear-gradient(to bottom, #00ff88, #004422)" 
-                    : "linear-gradient(to bottom, #ff003c, #440011)";
-                
-                pendingPrediction = { target: nextP, type: type };
+                // YOUR ORIGINAL LOGIC - DO NOT CHANGE
+                const type = (parseInt(latest.number) + 3) % 2 === 0 ? "BIG" : "SMALL";
+                const pRes = document.getElementById('p-res');
+                pRes.innerText = type;
+                pRes.style.color = type === 'BIG' ? '#00ff88' : '#ff003c';
+                pRes.style.textShadow = `0 0 25px ${type === 'BIG' ? '#00ff88' : '#ff003c'}`;
+                currentPrediction = { period: nextP, type: type };
             }
-        } catch (e) {
-            document.getElementById('status').innerText = "REROUTING VIA RGB TUNNEL...";
+        } catch(e) {}
+    }
+
+    function showResultAnim(win) {
+        const overlay = document.getElementById('resOverlay');
+        const msg = document.getElementById('resMsg');
+        if(win) {
+            msg.innerHTML = `<div style="color:#00ff88; font-size: 70px; font-weight:900; font-family:'Orbitron'; text-shadow:0 0 50px #00ff88;">WINNER</div>`;
+            confetti({ particleCount: 400, spread: 150, origin: { y: 0.5 }, colors: ['#00ff88', '#ffffff', '#00f3ff'] });
+            // Win Flash Effect
+            document.body.style.boxShadow = "inset 0 0 100px #00ff8855";
+            setTimeout(() => document.body.style.boxShadow = "none", 2000);
+        } else {
+            msg.innerHTML = `<div style="color:#ff003c; font-size: 70px; font-weight:900; font-family:'Orbitron'; text-shadow:0 0 50px #ff003c;">LOSE</div>`;
         }
-    }
-
-    function triggerWin() {
-        // Massive Confetti & RGB Flash
-        confetti({ particleCount: 400, spread: 150, origin: { y: 0.6 }, colors: ['#ff0000', '#00ff88', '#00f3ff'] });
-        document.body.style.animation = "flash 0.5s 3";
-    }
-
-    function salt(len) {
-        return Math.random().toString(36).substring(2, 2 + len);
+        overlay.classList.add('show');
+        setTimeout(() => overlay.classList.remove('show'), 3500);
     }
 </script>
-
-<style>
-    @keyframes flash {
-        0%, 100% { background: #000; }
-        50% { background: #00ff8822; }
-    }
-</style>
 </body>
 </html>
