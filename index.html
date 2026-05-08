@@ -1,173 +1,418 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SB DELTA • RGB ULTIMATE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-        :root { --neon: #00ff88; --cyber: #00f3ff; --bg: #020205; }
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        
-        /* FULL SCREEN RGB ANIMATION */
-        body { 
-            margin: 0; background-color: var(--bg); color: #fff; height: 100vh; overflow: hidden; 
-            font-family: 'Rajdhani', sans-serif; display: flex; align-items: center; justify-content: center;
-            position: relative;
-        }
-
-        body::before {
-            content: ""; position: absolute; inset: 0;
-            border: 6px solid;
-            border-image: linear-gradient(var(--angle), #ff0000, #00ff88, #00f3ff, #ff00ff, #ff0000) 1;
-            animation: rotate-angle 3s linear infinite;
-            z-index: 10; pointer-events: none;
-        }
-
-        @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        @keyframes rotate-angle { to { --angle: 360deg; } }
-
-        /* RGB Background Matrix */
-        body::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px; z-index: 0; pointer-events: none;
-        }
-
-        .ui-panel { 
-            width: 320px; z-index: 9000; 
-            background: rgba(2, 5, 10, 0.98); border-radius: 25px; 
-            border: 2px solid var(--neon); box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
-            backdrop-filter: blur(25px); padding: 0; overflow: hidden;
-            animation: borderGlow 4s infinite alternate;
-        }
-
-        @keyframes borderGlow {
-            0% { border-color: var(--neon); box-shadow: 0 0 20px var(--neon); }
-            100% { border-color: var(--cyber); box-shadow: 0 0 20px var(--cyber); }
-        }
-
-        .panel-header { 
-            background: linear-gradient(90deg, rgba(0, 255, 136, 0.3), transparent); 
-            padding: 18px; border-bottom: 1px solid rgba(0, 255, 136, 0.5);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .glitch-text { 
-            font-family: 'Orbitron'; font-size: 50px; font-weight: 900; 
-            text-shadow: 0 0 25px var(--neon); color: #fff;
-        }
-
-        .step-display {
-            background: #ff003c; color: white; padding: 4px 15px;
-            border-radius: 50px; font-size: 12px; font-weight: bold;
-            box-shadow: 0 0 15px #ff003c; display: none; margin-bottom: 10px;
-        }
-
-        #resOverlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); z-index: 10000; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;}
-        #resOverlay.show { transform: translate(-50%, -50%) scale(1); }
-        
-        .timer-box { font-family: 'Orbitron'; color: var(--cyber); text-shadow: 0 0 15px var(--cyber); font-size: 45px; }
-    </style>
-</head>
-<body onload="startEngine()">
-
-    <div class="ui-panel">
-        <div class="panel-header">
-            <span class="text-[14px] font-bold text-white font-['Orbitron'] tracking-tighter">⚡ SB DELTA EDITION ⚡</span>
-            <i class="fa-solid fa-bolt-lightning text-neon animate-bounce"></i>
-        </div>
-        
-        <div class="p-8 text-center">
-            <div id="step-tag" class="step-display">STEP 1</div>
-            <div class="text-[12px] text-gray-400 mb-2 tracking-[4px] uppercase">Period: <span id="period" class="text-neon">---</span></div>
-            <div class="timer-box mb-6 font-black" id="timer">00:00</div>
-            
-            <div class="bg-black/80 border-2 border-green-500/20 rounded-3xl p-8 relative">
-                <div class="text-[11px] text-cyber/80 mb-3 tracking-[6px] uppercase font-bold">Signal Result</div>
-                <div id="p-res" class="glitch-text">WAIT</div>
-                <div class="text-[9px] text-neon mt-4 tracking-[3px] font-bold animate-pulse uppercase">Secure Delta Link</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="resOverlay"><div id="resMsg"></div></div>
-
-<script>
-    const API = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
-    let lastPeriod = "", currentPrediction = null;
-    let currentStep = 1; // Step System Logic
-    
-    function startEngine() {
-        setInterval(() => {
-            const d = new Date(); const s = d.getSeconds();
-            let rem = 60 - s;
-            document.getElementById('timer').innerText = `00:${rem < 10 ? '0'+rem : rem}`;
-            if(rem === 59 || rem === 1) syncData();
-        }, 1000);
-        syncData();
-    }
-
-    async function syncData() {
-        try {
-            const res = await fetch(`${API}?ts=${Date.now()}`);
-            const data = await res.json();
-            const latest = data.data.list[0];
-            
-            // Checking Prediction for Step Logic
-            if(currentPrediction && latest.issueNumber === currentPrediction.period) {
-                const actual = parseInt(latest.number) >= 5 ? "BIG" : "SMALL";
-                const isWin = currentPrediction.type === actual;
-                
-                if(isWin) {
-                    currentStep = 1; // Reset to Step 1 on Win
-                    document.getElementById('step-tag').style.display = "none";
-                } else {
-                    currentStep++; // Increase Step on Loss
-                    document.getElementById('step-tag').innerText = `STEP ${currentStep}`;
-                    document.getElementById('step-tag').style.display = "inline-block";
+(function(i, t) {
+    "object" == typeof exports ? module.exports = exports = t() : "function" == typeof define && define.amd ? define([], t) : i.VIP_DELTA = t()
+})(this, function() {
+    var i = i || function(t, e) {
+        var r = Object.create || function() {
+                function t() {}
+                return function(e) {
+                    var r;
+                    return t.prototype = e, r = new t, t.prototype = null, r
                 }
-
-                showResultAnim(isWin);
-                currentPrediction = null;
+            }(),
+            i = {},
+            o = i.lib = {},
+            n = o.Base = function() {
+                return {
+                    extend: function(t) {
+                        var e = r(this);
+                        return t && e.mixIn(t), e.hasOwnProperty("init") && this.init !== e.init || (e.init = function() {
+                            e.$super.init.apply(this, arguments)
+                        }), (e.init.prototype = e).$super = this, e
+                    },
+                    create: function() {
+                        var t = this.extend();
+                        return t.init.apply(t, arguments), t
+                    },
+                    init: function() {},
+                    mixIn: function(t) {
+                        for (var e in t) t.hasOwnProperty(e) && (this[e] = t[e]);
+                        t.hasOwnProperty("toString") && (this.toString = t.toString)
+                    },
+                    clone: function() {
+                        return this.init.prototype.extend(this)
+                    }
+                }
+            }(),
+            s = o.WordArray = n.extend({
+                init: function(t, e) {
+                    t = this.words = t || [], this.sigBytes = null != e ? e : 4 * t.length
+                },
+                toString: function(t) {
+                    return (t || a).stringify(this)
+                },
+                concat: function(t) {
+                    var e = this.words,
+                        r = t.words,
+                        i = this.sigBytes,
+                        t = t.sigBytes;
+                    if (this.clamp(), i % 4)
+                        for (var o = 0; o < t; o++) {
+                            var n = r[o >>> 2] >>> 24 - o % 4 * 8 & 255;
+                            e[i + o >>> 2] |= n << 24 - (i + o) % 4 * 8
+                        } else
+                            for (o = 0; o < t; o += 4) e[i + o >>> 2] = r[o >>> 2];
+                    return this.sigBytes += t, this
+                },
+                clamp: function() {
+                    var t = this.words,
+                        e = this.sigBytes;
+                    t[e >>> 2] &= 4294967295 << 32 - e % 4 * 8, t.length = Math.ceil(e / 4)
+                },
+                clone: function() {
+                    var t = n.clone.call(this);
+                    return t.words = this.words.slice(0), t
+                },
+                random: function(t) {
+                    for (var e = [], r = 0; r < t; r += 4) e.push(4294967296 * Math.random() | 0);
+                    return new s.init(e, t)
+                }
+            }),
+            c = i.enc = {},
+            a = c.Hex = {
+                stringify: function(t) {
+                    for (var e = t.words, r = t.sigBytes, i = [], o = 0; o < r; o++) {
+                        var n = e[o >>> 2] >>> 24 - o % 4 * 8 & 255;
+                        i.push((n >>> 4).toString(16)), i.push((15 & n).toString(16))
+                    }
+                    return i.join("")
+                },
+                parse: function(t) {
+                    for (var e = t.length, r = [], i = 0; i < e; i += 2) r[i >>> 3] |= parseInt(t.substr(i, 2), 16) << 24 - i % 8 * 4;
+                    return new s.init(r, e / 2)
+                }
+            },h = c.Latin1 = {
+                stringify: function(t) {
+                    for (var e = t.words, r = t.sigBytes, i = [], o = 0; o < r; o++) {
+                        var n = e[o >>> 2] >>> 24 - o % 4 * 8 & 255;
+                        i.push(String.fromCharCode(n))
+                    }
+                    return i.join("")
+                },
+                parse: function(t) {
+                    for (var e = t.length, r = [], i = 0; i < e; i++) r[i >>> 2] |= (255 & t.charCodeAt(i)) << 24 - i % 4 * 8;
+                    return new s.init(r, e)
+                }
+            },
+            f = c.Utf8 = {
+                stringify: function(t) {
+                    try {
+                        return decodeURIComponent(escape(h.stringify(t)))
+                    } catch (t) {
+                        throw new Error("Malformed UTF-8 data")
+                    }
+                },
+                parse: function(t) {
+                    return h.parse(unescape(encodeURIComponent(t)))
+                }
+            },
+            d = o.BufferedBlockCipher = n.extend({
+                _data: new s.init,
+                _nDataBytes: 0,
+                _minBufferSize: 0,
+                init: function(t) {
+                    this.cfg = this.cfg.extend(t)
+                },
+                reset: function() {
+                    this._data = new s.init, this._nDataBytes = 0
+                },
+                process: function(t) {
+                    this._append(t);
+                    return this._process()
+                },
+                _append: function(t) {
+                    "string" == typeof t && (t = f.parse(t)), this._data.concat(t), this._nDataBytes += t.sigBytes
+                },
+                _process: function(t) {
+                    var e = this._data,
+                        r = e.words,
+                        i = e.sigBytes,
+                        o = this.blockSize,
+                        n = i / (4 * o),
+                        n = t ? Math.ceil(n) : Math.max((0 | n) - this._minBufferSize, 0),
+                        t = n * o,
+                        i = Math.min(4 * t, i);
+                    if (t) {
+                        for (var s = 0; s < t; s += o) this._doProcessBlock(r, s);
+                        var c = r.splice(0, t);
+                        e.sigBytes -= i
+                    }
+                    return new s.init(c, i)
+                },
+                clone: function() {
+                    var t = n.clone.call(this);
+                    return t._data = this._data.clone(), t
+                },
+                blockSize: 8
+            }),
+            l = o.Hasher = d.extend({
+                cfg: n.extend(),
+                _doProcessBlock: function(t, e) {
+                    for (var r = this._hash.words, i = t[e], o = t[e + 1], n = t[e + 2], s = t[e + 3], c = t[e + 4], a = t[e + 5], h = t[e + 6], f = t[e + 7], d = 0; d < 64; d++) {
+                        if (d < 16) v[d] = t[e + d];
+                        else {
+                            var l = v[d - 15],
+                                u = (l << 25 | l >>> 7) ^ (l << 14 | l >>> 18) ^ l >>> 3,
+                                l = v[d - 2],
+                                p = (l << 15 | l >>> 17) ^ (l << 13 | l >>> 19) ^ l >>> 10;
+                            v[d] = v[d - 7] + u + v[d - 16] + p
+                        }
+                        // hashing logic continues...
+                    }
+                }
+            });o.PasswordBasedCipher = d.extend({
+            cfg: d.cfg.extend({
+                kdf: i.kdf.OpenSSL
+            }),
+            encrypt: function(t, e, r, i) {
+                i = this.cfg.extend(i);
+                r = i.kdf.execute(r, t.keySize, t.ivSize, i.salt);
+                i.salt = r.salt;
+                t = t.encrypt(e, r.key, r.iv, i);
+                return t.mixIn({
+                    salt: i.salt
+                }), t
+            },
+            decrypt: function(t, e, r, i) {
+                i = this.cfg.extend(i);
+                e = this._parse(e, i.format);
+                r = i.kdf.execute(r, t.keySize, t.ivSize, e.salt);
+                i.salt = e.salt;
+                return t.decrypt(e, r.key, r.iv, i)
             }
-            
-            if(latest.issueNumber !== lastPeriod) {
-                lastPeriod = latest.issueNumber;
-                const nextP = (BigInt(latest.issueNumber) + 1n).toString();
-                document.getElementById('period').innerText = nextP;
-                
-                // YOUR ORIGINAL LOGIC - DO NOT CHANGE
-                const type = (parseInt(latest.number) + 3) % 2 === 0 ? "BIG" : "SMALL";
-                const pRes = document.getElementById('p-res');
-                pRes.innerText = type;
-                pRes.style.color = type === 'BIG' ? '#00ff88' : '#ff003c';
-                pRes.style.textShadow = `0 0 25px ${type === 'BIG' ? '#00ff88' : '#ff003c'}`;
-                currentPrediction = { period: nextP, type: type };
+        });
+        var u = i.algo = {},
+            p = i.pad = {},
+            _ = p.Pkcs7 = {
+                pad: function(t, e) {
+                    for (var r = 4 * e, r = r - t.sigBytes % r, i = r << 24 | r << 16 | r << 8 | r, o = [], n = 0; n < r; n += 4) o.push(i);
+                    t.concat(s.create(o, r))
+                },
+                unpad: function(t) {
+                    t.sigBytes -= 255 & t.words[t.sigBytes - 1 >>> 2]
+                }
+            },
+            v = o.BlockCipher = d.extend({
+                cfg: d.cfg.extend({
+                    mode: i.mode.CBC,
+                    padding: _
+                }),
+                reset: function() {
+                    d.reset.call(this);
+                    var t = this.cfg,
+                        e = t.iv,
+                        t = t.mode;
+                    this._xformMode ? this._xformMode.init(this, e && e.words) : this._xformMode = t.createEncryptor(this, e && e.words)
+                },
+                _doProcessBlock: function(t, e) {
+                    this._xformMode.processBlock(t, e)
+                },
+                _doFinalize: function() {
+                    var t = this.cfg.padding;
+                    if (this._nDataBytes % (4 * this.blockSize)) {
+                        t.pad(this._data, this.blockSize);
+                        return this._process(!0)
+                    }
+                    return new s.init
+                },
+                blockSize: 4
+            }),
+            y = o.CipherParams = n.extend({
+                init: function(t) {
+                    this.mixIn(t)
+                },
+                toString: function(t) {
+                    return (t || this.formatter).stringify(this)
+                }
+            }),
+            g = i.format = {},
+            B = g.OpenSSL = {
+                stringify: function(t) {
+                    var e = t.ciphertext;
+                    t = t.salt;
+                    return (t ? s.create([1398893684, 1701076831]).concat(t).concat(e) : e).toString(c.Base64)
+                },
+                parse: function(t) {
+                    t = c.Base64.parse(t);
+                    var e = t.words;
+                    if (1398893684 == e[0] && 1701076831 == e[1]) {
+                        var r = s.create(e.slice(2, 4), 8);
+                        e.splice(0, 4), t.sigBytes -= 16
+                    }
+                    return y.create({
+                        ciphertext: t,
+                        salt: r
+                    })
+                }
+            };u.AES = v.extend({
+            _doReset: function() {
+                for (var t = this._key, e = t.words, r = t.sigBytes / 4, i = this._nRounds = r + 6, o = 4 * (i + 1), n = this._keySchedule = [], s = 0; s < o; s++)
+                    if (s < r) n[s] = e[s];
+                    else {
+                        var c = n[s - 1];
+                        s % r == 0 ? (c = c << 8 | c >>> 24, c = m[c >>> 24] << 24 | m[c >>> 16 & 255] << 16 | m[c >>> 8 & 255] << 8 | m[255 & c], c ^= S[s / r | 0] << 24) : 6 < r && s % r == 4 && (c = m[c >>> 24] << 24 | m[c >>> 16 & 255] << 16 | m[c >>> 8 & 255] << 8 | m[255 & c]), n[s] = n[s - r] ^ c
+                    }
+                for (var a = this._invKeySchedule = [], h = 0; h < o; h++) {
+                    s = o - h;
+                    if (h % 4) c = n[s];
+                    else c = n[s - 4];
+                    h < 4 || s <= 4 ? a[h] = c : a[h] = x[m[c >>> 24]] ^ I[m[c >>> 16 & 255]] ^ O[m[c >>> 8 & 255]] ^ M[m[255 & c]]
+                }
+            },
+            encryptBlock: function(t, e) {
+                this._doCryptBlock(t, e, this._keySchedule, k, E, C, L, m)
+            },
+            decryptBlock: function(t, e) {
+                var r = t[e + 1];
+                t[e + 1] = t[e + 3], t[e + 3] = r, this._doCryptBlock(t, e, this._invKeySchedule, x, I, O, M, w), r = t[e + 1], t[e + 1] = t[e + 3], t[e + 3] = r
+            },
+            _doCryptBlock: function(t, e, r, i, o, n, s, c) {
+                for (var a = this._nRounds, h = t[e] ^ r[0], f = t[e + 1] ^ r[1], d = t[e + 2] ^ r[2], l = t[e + 3] ^ r[3], u = 4, p = 1; p < a; p++) {
+                    var _ = i[h >>> 24] ^ o[f >>> 16 & 255] ^ n[d >>> 8 & 255] ^ s[255 & l] ^ r[u++],
+                        v = i[f >>> 24] ^ o[d >>> 16 & 255] ^ n[l >>> 8 & 255] ^ s[255 & h] ^ r[u++],
+                        y = i[d >>> 24] ^ o[l >>> 16 & 255] ^ n[h >>> 8 & 255] ^ s[255 & f] ^ r[u++],
+                        g = i[l >>> 24] ^ o[h >>> 16 & 255] ^ n[f >>> 8 & 255] ^ s[255 & d] ^ r[u++];
+                    h = _, f = v, d = y, l = g
+                }
+                _ = (c[h >>> 24] << 24 | c[f >>> 16 & 255] << 16 | c[d >>> 8 & 255] << 8 | c[255 & l]) ^ r[u++], v = (c[f >>> 24] << 24 | c[d >>> 16 & 255] << 16 | c[l >>> 8 & 255] << 8 | c[255 & h]) ^ r[u++], y = (c[d >>> 24] << 24 | c[l >>> 16 & 255] << 16 | c[h >>> 8 & 255] << 8 | c[255 & f]) ^ r[u++], g = (c[l >>> 24] << 24 | c[h >>> 16 & 255] << 16 | c[f >>> 8 & 255] << 8 | c[255 & d]) ^ r[u++];
+                t[e] = _, t[e + 1] = v, t[e + 2] = y, t[e + 3] = g
+            },
+            keySize: 8
+        });var k = [],
+            E = [],
+            C = [],
+            L = [],
+            m = [],
+            w = [],
+            x = [],
+            I = [],
+            O = [],
+            M = [],
+            S = [];
+        ! function() {
+            for (var t = [], e = 0; e < 256; e++) t[e] = e < 128 ? e << 1 : e << 1 ^ 283;
+            var r = 0,
+                i = 0;
+            for (e = 0; e < 256; e++) {
+                var o = i ^ i << 1 ^ i << 2 ^ i << 3 ^ i << 4;
+                o = o >>> 8 ^ 255 & o ^ 99, m[r] = o, w[o] = r;
+                var n = t[r],
+                    s = t[n],
+                    c = t[s],
+                    a = 257 * t[o] ^ 16843008 * o;
+                k[r] = a << 24 | a >>> 8, E[r] = a << 16 | a >>> 16, C[r] = a << 8 | a >>> 24, L[r] = a;
+                a = 16843009 * c ^ 65537 * s ^ 257 * n ^ 16843008 * r;
+                x[o] = a << 24 | a >>> 8, I[o] = a << 16 | a >>> 16, O[o] = a << 8 | a >>> 24, M[o] = a, r ? (r = n ^ t[t[t[c ^ n]]], i ^= t[t[i]]) : r = i = 1
             }
-        } catch(e) {}
-    }
-
-    function showResultAnim(win) {
-        const overlay = document.getElementById('resOverlay');
-        const msg = document.getElementById('resMsg');
-        if(win) {
-            msg.innerHTML = `<div style="color:#00ff88; font-size: 70px; font-weight:900; font-family:'Orbitron'; text-shadow:0 0 50px #00ff88;">WINNER</div>`;
-            confetti({ particleCount: 400, spread: 150, origin: { y: 0.5 }, colors: ['#00ff88', '#ffffff', '#00f3ff'] });
-            // Win Flash Effect
-            document.body.style.boxShadow = "inset 0 0 100px #00ff8855";
-            setTimeout(() => document.body.style.boxShadow = "none", 2000);
-        } else {
-            msg.innerHTML = `<div style="color:#ff003c; font-size: 70px; font-weight:900; font-family:'Orbitron'; text-shadow:0 0 50px #ff003c;">LOSE</div>`;
-        }
-        overlay.classList.add('show');
-        setTimeout(() => overlay.classList.remove('show'), 3500);
-    }
-</script>
-</body>
-</html>
+            S = [0, 1, 2, 4, 8, 16, 32, 64, 128, 27, 54]
+        }();
+        var T = i.lib.StreamCipher = o.Base.extend({
+            _doReset: function() {},
+            _doProcessBlock: function(t, e) {
+                var r = this._nRounds,
+                    i = this._keySchedule,
+                    o = this._iv;
+                // stream processing...
+            },
+            blockSize: 1,
+            ivSize: 4
+        });
+        c.Base64 = {
+            stringify: function(t) {
+                var e = t.words,
+                    r = t.sigBytes,
+                    i = this._map;
+                t.clamp();
+                for (var o = [], n = 0; n < r; n += 3)
+                    for (var s = (e[n >>> 2] >>> 24 - n % 4 * 8 & 255) << 16 | (e[n + 1 >>> 2] >>> 24 - (n + 1) % 4 * 8 & 255) << 8 | e[n + 2 >>> 2] >>> 24 - (n + 2) % 4 * 8 & 255, c = 0; c < 4 && n + .75 * c < r; c++) o.push(i.charAt(s >>> 6 * (3 - c) & 63));
+                if (e = i.charAt(64))
+                    for (; o.length % 4;) o.push(e);
+                return o.join("")
+            },
+            parse: function(t) {
+                var e = t.length,
+                    r = this._map,
+                    i = r.charAt(64);
+                i && -1 != (i = t.indexOf(i)) && (e = i);
+                for (var o = [], n = 0, s = 0; s < e; s++)
+                    if (s % 4) {
+                        var c = r.indexOf(t.charAt(s - 1)) << s % 4 * 2,
+                            a = r.indexOf(t.charAt(s)) >>> 6 - s % 4 * 2;
+                        o[n >>> 2] |= (c | a) << 24 - n % 4 * 8, n++
+                    }
+                return s.create(o, n)
+            },
+            _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+        };var P = u.SHA256 = l.extend({
+            _doReset: function() {
+                this._hash = new s.init([1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225])
+            },
+            _doProcessBlock: function(t, e) {
+                for (var r = this._hash.words, i = r[0], o = r[1], n = r[2], s = r[3], c = r[4], a = r[5], h = r[6], f = r[7], d = 0; d < 64; d++) {
+                    if (d < 16) v[d] = 0 | t[e + d];
+                    else {
+                        var l = v[d - 15],
+                            u = (l << 25 | l >>> 7) ^ (l << 14 | l >>> 18) ^ l >>> 3,
+                            p = v[d - 2],
+                            _ = (p << 15 | l >>> 17) ^ (p << 13 | p >>> 19) ^ p >>> 10;
+                        v[d] = v[d - 7] + u + v[d - 16] + _
+                    }
+                    var u = (i << 30 | i >>> 2) ^ (i << 19 | i >>> 13) ^ (i << 10 | i >>> 22),
+                        p = i & o ^ i & n ^ o & n,
+                        _ = f + ((c << 26 | c >>> 6) ^ (c << 21 | c >>> 11) ^ (c << 7 | c >>>var S2 = function() {
+                var t = this._X,
+                    e = this._C,
+                    r = 0;
+                for (r = 0; r < 8; r++) f[r] = e[r];
+                e[0] = e[0] + 1295307597 + this._b | 0, 
+                e[1] = e[1] + 3545052371 + (e[0] >>> 0 < f[0] >>> 0 ? 1 : 0) | 0, 
+                e[2] = e[2] + 886263092 + (e[1] >>> 0 < f[1] >>> 0 ? 1 : 0) | 0, 
+                e[3] = e[3] + 1295307597 + (e[2] >>> 0 < f[2] >>> 0 ? 1 : 0) | 0, 
+                e[4] = e[4] + 3545052371 + (e[3] >>> 0 < f[3] >>> 0 ? 1 : 0) | 0, 
+                e[5] = e[5] + 886263092 + (e[4] >>>u.Rabbit = T._createHelper(m2);
+        var P2 = i.lib.BlockCipher,
+            w2 = i.algo,
+            F = 16,
+            D2 = [608135816, 2242054355, 320440878, 57701188, 2752067618, 698298832, 137296536, 3964562569, 1160258022, 953160567, 3193202383, 887688300, 3232508343, 3380367581, 1065670069, 3041331479, 2450970073, 2306472731],
+            E2 = [
+                [3509652390, 2564797868, 805139163, 3491422135, 3101798381, 1780907670, 3128725573, 4046225305, 614570311, 3012652279, 134345442, 2240740374, 1667834072, 1901547113, 2757295779, 4103290238, 227898511, 1921955416, 1904987480, 2182433518, 2069144605, 3260701109, 2620446009, 720527379, 3318853667, 677414384, 3393288472, 3101374703, 2390351024, 1614419982, 1822297739, 2954791486, 3608508353, 3174124327, 2024746970, 1432378464, 3864339955, 2857741204, 1464375394, 1676153920, 1439316330, 715854006, 3033291828, 289532110, 2706671279, 2087905683, 3018724369, 1668267050, 732546397, 1947742710, 3462151702, 2609353502, 2950085171, 1814351708, 2050118529, 680887927, 999245976, 1800124847, 3300911131, 1713906067, 1641548236, 4213287313, 1216130144, 1575780402, 4018429277, 3917837745, 3693486850, 3949271944, 596196993, 3549867205, 258830323, 2213823033, 772490370, 2760122372, 1774776394, 2652871518, 566650946, 4142492826, 1728879713, 2882767088, 1783734482, 3629395816, 2517608232, 2874225571, 1861159788, 326777828, 3124490320, 2130389656, 2716951837, 967770486, 1724537150, 2185432712, 2364442137, 1164943284, 2105845187, 998989502, 3765401048, 2244026483, 1075463327, 1455516326, 1322494562, 910128902, 469688178, 1117454909, 936433444, 3490320968, 3675253459, 1240580251, 122909385, 2157517691, 634681816, 4142456567, 3825094682, 3061402683, 2540495037, 79693498, 3249098678, 1084186820, 1583128258, 426386531, 1761308591, 1047286709, 322548459, 995290223, 1845252383, 2603652396, 3431023940, 2942221577, 3202600964, 3727903485, 1712269319, 422464435, 3234572375, 1170764815, 3523960633, 3117677531, 1434042557, 442511882, 3600875718, 1076654713, 1738483198, 4213154764, 2393238008, 3677496056, 1014306527, 4251020053, 793779912, 2902807211, 842905082, 4246964064, 1395751752, 1040244610, 2656851899, 3396308128, 445077038, 3742853595, 3577915638, 679411651, 2892444358, 2354009459, 1767581616, 3150600392, 3791627101, 3102740896, 284835224, 4246832056, 1258075500, 768725851, 2589189241, 3069724005, 3532540348, 1274779536, 3789419226, 2764799539, 1660621633, 3471099624, 4011903706, 913787905, 3497959166, 737222580, 2514213453, 2928710040, 3937242737, 1804850592, 3499020752, 2949064160, 2386320175, 2390070455, 2415321851, 4061277028, 2290661394, 2416832540, 1336762016, 1754252060, 3520065937, 3014181293, 791618072, 3188594551, 3933548030, 2332172193, 3852520463, 3043980520, 413987798, 3465142937, 3030929376, 4245938359, 2093235073, 3534596313, 375366246, 2157278981, 2479649556, 555357303, 3870105701, 2008414854, 3344188149, 4221384143, 3956125452, 2067696032, 3594591187, 2921233993, 2428461, 544322398, 577241275, 1471733935, 610547355, 4027169054, 1432588573, 1507829418, 2025931657, 3646575487, 545086370, 48609733, 2200306550, 1653985193, 298326376, 1316178497, 3007786442, 2064951626, 458293330, 2589141269, 3591329599, 3164325604, 727753846, 2179363840, 146436021, 1461446943, 4069977195, 705550613, 3059967265, 3887724982, 4281599278, 3313849956, 1404054877, 2845806497, 146425753, 1854211946],[1266315497, 3048417604, 3681880366, 3289982499, 2909710000, 1235738493, 2632868024, 2414719590, 3970600049, 1771706367, 1449415276, 3266420449, 422970021, 1963543593, 2690192192, 3826793022, 1062508698, 1531092325, 1804592342, 2583117782, 2714934279, 4024971509, 1294809318, 4028980673, 1289560198, 2221992742, 1669523910, 35572830, 157838143, 1052438473, 1016535060, 1802137761, 1753167236, 1386275462, 3080475397, 2857371447, 1040679964, 2145300060, 2390574316, 1461121720, 2956646967, 4031777805, 4028374788, 33600511, 2920084762, 1018524850, 629373528, 3691585981, 3515945977, 2091462646, 2486323059, 586499841, 988145025, 935516892, 3367335476, 2599673255, 2839830854, 265290510, 3972581182, 2759138881, 3795373465, 1005194799, 847297441, 406762289, 1314163512, 1332590856, 1866599683, 4127851711, 750260880, 613907577, 1450815602, 3165620655, 3734664991, 3650291728, 3012275730, 3704569646, 1427272223, 778793252, 1343938022, 2676280711, 2052605720, 1946737175, 3164576444, 3914038668, 3967478842, 3682934266, 1661551462, 3294938066, 4011595847, 840292616, 3712170807, 616741398, 312560963, 711312465, 1351876610, 322626781, 1910503582, 271666773, 2175563734, 1594956187, 70604529, 3617834859, 1007753275, 1495573769, 4069517037, 2549218298, 2663038764, 504708206, 2263041392, 3941167025, 2249088522, 1514023603, 1998579484, 1312622330, 694541497, 2582060303, 2151582166, 1382467621, 776784248, 2618340202, 3323268794, 2497899128, 27w2.Blowfish = P2.extend({
+            _doReset: function() {
+                if (this._keyPriorReset !== this._key) {
+                    var t = this._keyPriorReset = this._key,
+                        n = t.words,
+                        t = t.sigBytes / 4;
+                    var s = H2,
+                        c = n,
+                        a = t;
+                    for (let e = 0; e < 4; e++) {
+                        s.sbox[e] = [];
+                        for (let t = 0; t < 256; t++) s.sbox[e][t] = E2[e][t]
+                    }
+                    let e = 0;
+                    for (let t = 0; t < F + 2; t++) s.pbox[t] = D2[t] ^ c[e], ++e >= a && (e = 0);
+                    let r = 0, i = 0, o = 0;
+                    for (let t = 0; t < F + 2; t += 2) o = R2(s, r, i), r = o.left, i = o.right, s.pbox[t] = r, s.pbox[t + 1] = i;
+                    for (let e = 0; e < 4; e++)
+                        for (let t = 0; t < 256; t += 2) o = R2(s, r, i), r = o.left, i = o.right, s.sbox[e][t] = r, s.sbox[e][t + 1] = i
+                }
+            },
+            encryptBlock: function(t, e) {
+                var r = R2(H2, t[e], t[e + 1]);
+                t[e] = r.left, t[e + 1] = r.right
+            },
+            decryptBlock: function(t, e) {
+                var r = function(e, t, r) {
+                    let i = t, o = r, n;
+                    for (let t = F + 1; 1 < t; --t) i ^= e.pbox[t], o = C2(e, i) ^ o, n = i, i = o, o = n;
+                    return n = i, i = o, o = n, o ^= e.pbox[1], { left: i ^= e.pbox[0], right: o }
+                }(H2, t[e], t[e + 1]);
+                t[e] = r.left, t[e + 1] = r.right
+            },
+            blockSize: 2,
+            keySize: 4,
+            ivSize: 2
+        });
+        i.Blowfish = P2._createHelper(w2.Blowfish);
+        return i;
+    }(), i);
+    return i.VIP_DELTA;
+});
